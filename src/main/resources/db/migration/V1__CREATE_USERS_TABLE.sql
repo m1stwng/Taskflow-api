@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS users
+(
+    id       UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
+
+    name     VARCHAR(255) NOT NULL,
+    email    VARCHAR(255) NOT NULL UNIQUE CHECK (email = LOWER(email)),
+    password VARCHAR(255) NOT NULL
+);
