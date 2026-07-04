@@ -1,5 +1,6 @@
 package dev.m1stwng.taskflow.auth.service;
 
+import dev.m1stwng.taskflow.auth.dto.request.LoginRequest;
 import dev.m1stwng.taskflow.auth.dto.request.RegisterRequest;
 import dev.m1stwng.taskflow.auth.dto.response.AuthenticationResponse;
 import dev.m1stwng.taskflow.auth.exception.DuplicateEmailException;
@@ -17,6 +18,9 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -30,6 +34,9 @@ import static org.mockito.Mockito.*;
 public class AuthServiceTests {
 
     private final String ACCESS_TOKEN = "MOCK-ACCESS-TOKEN";
+
+    @Mock
+    private AuthenticationManager authenticationManager;
 
     @Mock
     private EmailNormalizer emailNormalizer;
@@ -47,7 +54,53 @@ public class AuthServiceTests {
     private AuthService authService;
 
     @Captor
+    private ArgumentCaptor<UsernamePasswordAuthenticationToken> credentialsArgumentCaptor;
+
+    @Captor
     private ArgumentCaptor<User> userArgumentCaptor;
+
+    @Nested
+    class Login {
+        final LoginRequest request = new LoginRequest(USER_EMAIL, USER_PASSWORD);
+
+        @Test
+        void shouldLogin() {
+            final Authentication auth = mock(Authentication.class);
+
+            final User user = UserFixture.user();
+            final SecurityUser securityUser = SecurityUser.of(user);
+
+            when(emailNormalizer.normalize(USER_EMAIL)).thenReturn(USER_EMAIL);
+            when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(auth);
+            when(auth.getPrincipal()).thenReturn(securityUser);
+            when(userRepository.getReferenceById(securityUser.id())).thenReturn(user);
+            when(jwtService.generate(any(SecurityUser.class))).thenReturn(ACCESS_TOKEN);
+
+            final AuthenticationResponse result = authService.login(request);
+
+            verify(emailNormalizer).normalize(USER_EMAIL);
+            verify(authenticationManager).authenticate(credentialsArgumentCaptor.capture());
+            verify(auth).getPrincipal();
+            verify(userRepository).getReferenceById(securityUser.id());
+            verify(jwtService).generate(securityUser);
+
+            assertAll(
+                    () -> assertEquals(USER_ID, result.id()),
+                    () -> assertEquals(USER_NAME, result.name()),
+                    () -> assertEquals(USER_EMAIL, result.email()),
+                    () -> assertEquals(ACCESS_TOKEN, result.accessToken())
+            );
+
+            final UsernamePasswordAuthenticationToken credentials = credentialsArgumentCaptor.getValue();
+
+            assertAll(
+                    () -> assertEquals(USER_EMAIL, credentials.getPrincipal()),
+                    () -> assertEquals(USER_PASSWORD, credentials.getCredentials())
+            );
+
+            verifyNoMoreInteractions(authenticationManager, emailNormalizer, jwtService, userRepository);
+        }
+    }
 
     @Nested
     class Register {

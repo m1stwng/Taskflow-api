@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Configuration;
                 description = "An API for task management to help individuals and teams to organize, track and collaborate",
                 contact = @Contact(name = "Brenno 'm1stwng'", email = "m1stwng@gmail.com"),
                 license = @License(name = "MIT License", identifier = "MIT"),
-                version = "0.1.0"
+                version = "0.2.0"
         ),
         security = {@SecurityRequirement(name = "bearerAuth")}
 )

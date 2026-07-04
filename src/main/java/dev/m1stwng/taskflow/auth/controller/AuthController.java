@@ -1,10 +1,12 @@
 package dev.m1stwng.taskflow.auth.controller;
 
+import dev.m1stwng.taskflow.auth.dto.request.LoginRequest;
 import dev.m1stwng.taskflow.auth.dto.request.RegisterRequest;
 import dev.m1stwng.taskflow.auth.dto.response.AuthenticationResponse;
 import dev.m1stwng.taskflow.auth.service.AuthService;
 import dev.m1stwng.taskflow.config.openapi.BadRequestApiResponse;
 import dev.m1stwng.taskflow.config.openapi.ConflictApiResponse;
+import dev.m1stwng.taskflow.config.openapi.UnauthorizedApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,6 +27,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+
+    @ApiResponse(responseCode = "200")
+    @BadRequestApiResponse
+    @UnauthorizedApiResponse
+    @PostMapping("/login")
+    public ResponseEntity<AuthenticationResponse> login(@RequestBody @Valid LoginRequest request) {
+        final AuthenticationResponse response = authService.login(request);
+
+        return ResponseEntity.ok(response);
+    }
 
     @ApiResponse(responseCode = "201")
     @BadRequestApiResponse

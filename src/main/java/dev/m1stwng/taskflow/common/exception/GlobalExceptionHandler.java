@@ -4,6 +4,7 @@ import dev.m1stwng.taskflow.auth.exception.DuplicateEmailException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -15,6 +16,18 @@ import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ProblemDetail> handleBadCredentialsException() {
+        final ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNAUTHORIZED,
+                "Email or password invalid"
+        );
+
+        problemDetail.setTitle("Bad credentials");
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problemDetail);
+    }
 
     @ExceptionHandler(DuplicateEmailException.class)
     public ResponseEntity<ProblemDetail> handleDuplicateEmailException() {

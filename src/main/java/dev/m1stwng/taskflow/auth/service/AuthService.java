@@ -1,5 +1,6 @@
 package dev.m1stwng.taskflow.auth.service;
 
+import dev.m1stwng.taskflow.auth.dto.request.LoginRequest;
 import dev.m1stwng.taskflow.auth.dto.request.RegisterRequest;
 import dev.m1stwng.taskflow.auth.dto.response.AuthenticationResponse;
 import dev.m1stwng.taskflow.auth.exception.DuplicateEmailException;
@@ -11,8 +12,13 @@ import dev.m1stwng.taskflow.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Objects;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -20,10 +26,35 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class AuthService {
 
+    private final AuthenticationManager authenticationManager;
     private final EmailNormalizer emailNormalizer;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+
+    public AuthenticationResponse login(LoginRequest request) {
+        final String email = emailNormalizer.normalize(request.email());
+
+        log.info("Logging in user {}", email);
+
+        final Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(email, request.password())
+        );
+
+        final SecurityUser securityUser = Objects.requireNonNull((SecurityUser) auth.getPrincipal());
+        final User user = userRepository.getReferenceById(securityUser.id());
+
+        final String accessToken = jwtService.generate(securityUser);
+
+        log.info("User logged in");
+
+        return new AuthenticationResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                accessToken
+        );
+    }
 
     public AuthenticationResponse register(RegisterRequest request) {
         final String email = emailNormalizer.normalize(request.email());

@@ -1,5 +1,6 @@
 package dev.m1stwng.taskflow.auth;
 
+import dev.m1stwng.taskflow.auth.dto.request.LoginRequest;
 import dev.m1stwng.taskflow.auth.dto.request.RegisterRequest;
 import dev.m1stwng.taskflow.fixture.UserFixture;
 import dev.m1stwng.taskflow.user.entity.User;
@@ -49,6 +50,47 @@ public abstract class AuthIntegrationTests {
         user.setPassword(passwordEncoder.encode(USER_PASSWORD));
 
         userRepository.deleteAll();
+    }
+
+    @Nested
+    class LoginEndpoint {
+        final LoginRequest request = new LoginRequest(USER_EMAIL, USER_PASSWORD);
+
+        @Test
+        void shouldLogin() throws Exception {
+            userRepository.save(user);
+
+            mockMvc.perform(post("/api/auth/login")
+                            .contentType(APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request))
+                    )
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
+                    .andExpect(jsonPath("$.id").isNotEmpty())
+                    .andExpect(jsonPath("$.id").isString())
+                    .andExpect(jsonPath("$.name").value(USER_NAME))
+                    .andExpect(jsonPath("$.email").value(USER_EMAIL))
+                    .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                    .andExpect(jsonPath("$.accessToken").isString());
+        }
+
+        @Test
+        void shouldReturn401WhenBadCredentials() throws Exception {
+            userRepository.save(user);
+
+            final LoginRequest wrongRequest = new LoginRequest(USER_EMAIL, "wrong-password");
+
+            mockMvc.perform(post("/api/auth/login")
+                            .contentType(APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(wrongRequest))
+                    )
+                    .andExpect(status().isConflict())
+                    .andExpect(content().contentTypeCompatibleWith(APPLICATION_PROBLEM_JSON))
+                    .andExpect(jsonPath("$.detail").value("Email or password invalid"))
+                    .andExpect(jsonPath("$.instance").value("/api/auth/login"))
+                    .andExpect(jsonPath("$.status").value(401))
+                    .andExpect(jsonPath("$.title").value("Bad credentials"));
+        }
     }
 
     @Nested
