@@ -1,5 +1,6 @@
 package dev.m1stwng.taskflow.auth;
 
+import dev.m1stwng.taskflow.TestcontainersConfiguration;
 import dev.m1stwng.taskflow.auth.dto.request.LoginRequest;
 import dev.m1stwng.taskflow.auth.dto.request.RegisterRequest;
 import dev.m1stwng.taskflow.fixture.UserFixture;
@@ -11,10 +12,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.testcontainers.utility.TestcontainersConfiguration;
 import tools.jackson.databind.ObjectMapper;
 
 import static dev.m1stwng.taskflow.fixture.UserFixture.*;
@@ -26,8 +27,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@SpringBootTest(classes = TestcontainersConfiguration.class)
-public abstract class AuthIntegrationTests {
+@Import(TestcontainersConfiguration.class)
+@SpringBootTest
+public class AuthIntegrationTests {
 
     @Autowired
     private MockMvc mockMvc;
@@ -84,7 +86,7 @@ public abstract class AuthIntegrationTests {
                             .contentType(APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(wrongRequest))
                     )
-                    .andExpect(status().isConflict())
+                    .andExpect(status().isUnauthorized())
                     .andExpect(content().contentTypeCompatibleWith(APPLICATION_PROBLEM_JSON))
                     .andExpect(jsonPath("$.detail").value("Email or password invalid"))
                     .andExpect(jsonPath("$.instance").value("/api/auth/login"))
