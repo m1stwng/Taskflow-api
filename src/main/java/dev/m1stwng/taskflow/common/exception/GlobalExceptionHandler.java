@@ -1,6 +1,7 @@
 package dev.m1stwng.taskflow.common.exception;
 
 import dev.m1stwng.taskflow.auth.exception.DuplicateEmailException;
+import dev.m1stwng.taskflow.user.exception.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -55,5 +56,15 @@ public class GlobalExceptionHandler {
         problemDetail.setProperty("errors", errors);
 
         return ResponseEntity.badRequest().body(problemDetail);
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ProblemDetail> handleUserNotFoundException() {
+        final ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND,
+                "User was not found"
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problemDetail);
     }
 }
