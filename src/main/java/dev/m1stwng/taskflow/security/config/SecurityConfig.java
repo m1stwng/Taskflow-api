@@ -45,6 +45,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
                                 "/api/auth/**",
+                                "/api/actuator/health",
+                                // TODO: Remove the public access from prometheus when preparing for production
+                                "/api/actuator/prometheus",
                                 "/error",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
