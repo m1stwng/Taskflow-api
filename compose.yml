@@ -24,5 +24,17 @@ services:
         condition: service_healthy
         restart: true
 
+  sonarqube:
+    image: sonarqube
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+
 volumes:
   grafana-storage:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
