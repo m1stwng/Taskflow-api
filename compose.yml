@@ -1,4 +1,35 @@
 services:
+  app:
+    build:
+      context: .
+    ports:
+      - "8080:8080"
+    environment:
+      JWT_EXPIRATION_SECONDS: ${JWT_EXPIRATION_SECONDS}
+      JWT_SECRET: ${JWT_SECRET}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "${POSTGRES_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   prometheus:
     image: prom/prometheus
     ports:
@@ -34,6 +65,7 @@ services:
       - sonarqube_logs:/opt/sonarqube/logs
 
 volumes:
+  postgres_data:
   grafana-storage:
   sonarqube_data:
   sonarqube_extensions:
